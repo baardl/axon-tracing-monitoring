@@ -30,8 +30,8 @@ import com.codahale.metrics.MetricRegistry;
 /**
  * Hello world!
  */
-public class App {
-	private static final Logger log = getLogger(App.class);
+public class Main {
+	private static final Logger log = getLogger(Main.class);
 
 	public void runServer(Configuration configuration) throws ExecutionException, InterruptedException {
 		configuration.start();
@@ -39,12 +39,14 @@ public class App {
 
 	public void sendCommands(Configuration configuration) throws InterruptedException, ExecutionException {
 		CommandGateway commandGateway = configuration.commandGateway();
-		QueryGateway queryGateway = configuration.queryGateway();
-		commandGateway.sendAndWait(new IssueCommand("gc1", 100));
-		commandGateway.sendAndWait(new IssueCommand("gc2", 50));
-		commandGateway.sendAndWait(new RedeemCommand("gc1", 10));
-		commandGateway.sendAndWait(new RedeemCommand("gc2", 20));
+		commandGateway.sendAndWait(new IssueCommand("giftCard1", 100));
+		commandGateway.sendAndWait(new IssueCommand("giftCard2", 50));
+		commandGateway.sendAndWait(new RedeemCommand("giftCard1", 10));
+		commandGateway.sendAndWait(new RedeemCommand("giftCard2", 20));
+	}
 
+	public void fetchSummaries(Configuration configuration) throws InterruptedException, ExecutionException {
+		QueryGateway queryGateway = configuration.queryGateway();
 		queryGateway.query(new FetchCardSummariesQuery(2, 0), ResponseTypes.multipleInstancesOf(CardSummary.class))
 					.get()
 					.forEach(System.out::println);
@@ -60,32 +62,33 @@ public class App {
 												 .configureEventStore(c -> new EmbeddedEventStore(new InMemoryEventStorageEngine()))
 												 .registerModule(eventHandlingConfiguration)
 												 .registerQueryHandler(c -> projection);
-//													   .buildConfiguration();
 		//Enable Metrics Configuration
 		MetricsConfiguration metricsConfiguration = new MetricsConfiguration();
 		MetricRegistry metricRegistry = axonMetricsRegistry.getMetricRegistry();
 		configurer = metricsConfiguration.configureDefaultMetrics(configurer, metricRegistry);
-
 
 		Configuration configuration = configurer.buildConfiguration();
 		return configuration;
 	}
 
 	public static void main(String[] args) throws ExecutionException, InterruptedException {
-		App app = new App();
+		Main main = new Main();
 
 		//MetricsRegistry
 		AxonMetricsRegistry metricsRegistry = new AxonMetricsRegistry();
 		metricsRegistry.startReport();
 		Meter pingMeter = metricsRegistry.meter("ping");
 		pingMeter.mark();
-		Configuration configuration = app.buildConfiguration(metricsRegistry);
+		Configuration configuration = main.buildConfiguration(metricsRegistry);
 
 		//Run server
-		app.runServer(configuration);
+		main.runServer(configuration);
 
 		//Send commands
-		app.sendCommands(configuration);
+		main.sendCommands(configuration);
+
+		//View summaries
+		main.fetchSummaries(configuration);
 
 		//Keep server running
 		metricsRegistry.wait5Seconds();
