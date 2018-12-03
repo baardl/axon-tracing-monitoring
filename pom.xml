@@ -17,6 +17,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <axon.version>3.4.1</axon.version>
+    <metrics.version>3.1.0</metrics.version>
   </properties>
 
   <dependencies>
@@ -26,6 +27,19 @@
       <artifactId>axon-core</artifactId>
       <version>${axon.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.axonframework</groupId>
+      <artifactId>axon-metrics</artifactId>
+      <version>${axon.version}</version>
+    </dependency>
+
+    <!--Metrics-->
+      <dependency>
+        <groupId>io.dropwizard.metrics</groupId>
+        <artifactId>metrics-core</artifactId>
+        <version>${metrics.version}</version>
+      </dependency>
+
     <!--TEST-->
     <dependency>
       <groupId>junit</groupId>
