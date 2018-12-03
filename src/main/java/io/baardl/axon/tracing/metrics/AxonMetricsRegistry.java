@@ -11,14 +11,14 @@ import com.codahale.metrics.MetricRegistry;
 
 public class AxonMetricsRegistry {
 	private static final Logger log = LoggerFactory.getLogger(AxonMetricsRegistry.class);
-	private final MetricRegistry metrics;
+	private final MetricRegistry metricRegistry;
 
 	public AxonMetricsRegistry() {
-		metrics = new MetricRegistry();
+		metricRegistry = new MetricRegistry();
 	}
 
 	public void startReport() {
-		ConsoleReporter reporter = ConsoleReporter.forRegistry(metrics)
+		ConsoleReporter reporter = ConsoleReporter.forRegistry(metricRegistry)
 												  .convertRatesTo(TimeUnit.SECONDS)
 												  .convertDurationsTo(TimeUnit.MILLISECONDS)
 												  .build();
@@ -33,7 +33,11 @@ public class AxonMetricsRegistry {
 	}
 
 	public Meter meter(String key) {
-		Meter meter = metrics.meter(key);
+		Meter meter = metricRegistry.meter(key);
 		return meter;
+	}
+
+	public MetricRegistry getMetricRegistry() {
+		return metricRegistry;
 	}
 }

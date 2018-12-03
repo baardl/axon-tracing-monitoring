@@ -8,6 +8,7 @@ import org.axonframework.metrics.GlobalMetricRegistry;
 import org.axonframework.metrics.MessageCountingMonitor;
 import org.axonframework.metrics.MessageTimerMonitor;
 import org.axonframework.metrics.PayloadTypeMessageMonitorWrapper;
+import org.axonframework.monitoring.MessageMonitor;
 import org.axonframework.monitoring.MultiMessageMonitor;
 
 import com.codahale.metrics.MetricRegistry;
@@ -18,7 +19,17 @@ public class MetricsConfiguration {
 		return DefaultConfigurer.defaultConfiguration();
 	}
 
-	public void configureSpecificEventBusMetrics(Configurer configurer, MetricRegistry metricRegistry) {
+	// The MetricRegistry is a class from the Dropwizard Metrics framework
+	public Configurer configureDefaultMetrics(Configurer configurer, MetricRegistry metricRegistry) {
+		GlobalMetricRegistry globalMetricRegistry = new GlobalMetricRegistry(metricRegistry);
+		// We register the default monitors to our messaging components by doing the following
+//		MessageMonitor messageMonitor = globalMetricRegistry.registerEventBus("axon-events");
+		globalMetricRegistry.registerWithConfigurer(configurer);
+		return configurer;
+	}
+
+	public Configurer configureSpecificEventBusMetrics(Configurer configurer, MetricRegistry metricRegistry) {
+
 		// For the EventBus we want to count the messages per type of event being published.
 		PayloadTypeMessageMonitorWrapper<MessageCountingMonitor> messageCounterPerType =
 				new PayloadTypeMessageMonitorWrapper<>(MessageCountingMonitor::new);
@@ -36,6 +47,7 @@ public class MetricsConfiguration {
 		eventBusRegistry.register("messageCounterPerType", messageCounterPerType);
 		eventBusRegistry.register("messageTimerPerType", messageTimerPerType);
 		metricRegistry.register("eventBus", eventBusRegistry);
+		return configurer;
 	}
 }
 

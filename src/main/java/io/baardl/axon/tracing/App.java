@@ -6,6 +6,7 @@ import io.baardl.axon.tracing.giftcard.FetchCardSummariesQuery;
 import io.baardl.axon.tracing.giftcard.GiftCard;
 import io.baardl.axon.tracing.issue.IssueCommand;
 import io.baardl.axon.tracing.metrics.AxonMetricsRegistry;
+import io.baardl.axon.tracing.metrics.MetricsConfiguration;
 import io.baardl.axon.tracing.redeem.RedeemCommand;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
@@ -24,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 import static org.slf4j.LoggerFactory.getLogger;
 
 import com.codahale.metrics.Meter;
+import com.codahale.metrics.MetricRegistry;
 
 /**
  * Hello world!
@@ -32,10 +34,7 @@ public class App {
 	private static final Logger log = getLogger(App.class);
 
 	public void runServer(Configuration configuration) throws ExecutionException, InterruptedException {
-
 		configuration.start();
-
-
 	}
 
 	public void sendCommands(Configuration configuration) throws InterruptedException, ExecutionException {
@@ -57,12 +56,19 @@ public class App {
 		eventHandlingConfiguration.registerEventHandler(c -> projection);
 
 		Configurer configurer = DefaultConfigurer.defaultConfiguration()
-												 .configureAggregate(GiftCard.class) // (1)
-												 .configureEventStore(c -> new EmbeddedEventStore(new InMemoryEventStorageEngine())) //(2)
-												 .registerModule(eventHandlingConfiguration) // (3)
-												 .registerQueryHandler(c -> projection); // (4)
-//													   .buildConfiguration(); // (5)
-		return configurer.buildConfiguration();
+												 .configureAggregate(GiftCard.class)
+												 .configureEventStore(c -> new EmbeddedEventStore(new InMemoryEventStorageEngine()))
+												 .registerModule(eventHandlingConfiguration)
+												 .registerQueryHandler(c -> projection);
+//													   .buildConfiguration();
+		//Enable Metrics Configuration
+		MetricsConfiguration metricsConfiguration = new MetricsConfiguration();
+		MetricRegistry metricRegistry = axonMetricsRegistry.getMetricRegistry();
+		configurer = metricsConfiguration.configureDefaultMetrics(configurer, metricRegistry);
+
+
+		Configuration configuration = configurer.buildConfiguration();
+		return configuration;
 	}
 
 	public static void main(String[] args) throws ExecutionException, InterruptedException {
@@ -74,7 +80,6 @@ public class App {
 		Meter pingMeter = metricsRegistry.meter("ping");
 		pingMeter.mark();
 		Configuration configuration = app.buildConfiguration(metricsRegistry);
-
 
 		//Run server
 		app.runServer(configuration);
