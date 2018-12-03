@@ -1,0 +1,47 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} %X{tid} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/xmldetails.log</file>
+        <encoder>
+            <pattern>%date %level [%thread] %logger{10} [%file:%line] %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <fileNamePattern>/logs/timeBasedlogFile.%d{yyyy-MM-dd-HH-mm}.log</fileNamePattern>
+            <maxHistory>3</maxHistory>
+        </rollingPolicy>
+
+    </appender>
+
+    <logger name="xmlLogger">
+        <appender-ref ref="FILE" />
+    </logger>
+
+    <appender name="FILE-IMPROVEMENT" class="ch.qos.logback.core.FileAppender">
+        <file>logs/improvementLogger.log</file>
+        <encoder>
+            <pattern>%date %level [%thread] %logger{10} [%file:%line] %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <fileNamePattern>/logs/timeBasedlogFile.%d{yyyy-MM-dd-HH-mm}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+    </appender>
+
+    <logger name="improvementLogger">
+        <appender-ref ref="FILE-IMPROVEMEN"/>
+    </logger>
+
+    <logger name="io.baardl.axon" level="TRACE"/>
+    <logger name="org.valuereporter" level="DEBUG"/>
+
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
