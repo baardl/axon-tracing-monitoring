@@ -10,6 +10,7 @@ import io.baardl.axon.tracing.redeem.RedeemCommand;
 
 import org.axonframework.commandhandling.gateway.CommandGateway;
 import org.axonframework.config.Configuration;
+import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.config.EventHandlingConfiguration;
 import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore;
@@ -30,19 +31,14 @@ import com.codahale.metrics.Meter;
 public class App {
 	private static final Logger log = getLogger(App.class);
 
-	public void runServer() throws ExecutionException, InterruptedException {
-		CardSummaryProjection projection = new CardSummaryProjection();
-		EventHandlingConfiguration eventHandlingConfiguration = new EventHandlingConfiguration();
-		eventHandlingConfiguration.registerEventHandler(c -> projection);
+	public void runServer(Configuration configuration) throws ExecutionException, InterruptedException {
 
-		Configuration configuration = DefaultConfigurer.defaultConfiguration()
-													   .configureAggregate(GiftCard.class) // (1)
-													   .configureEventStore(c -> new EmbeddedEventStore(new InMemoryEventStorageEngine())) //(2)
-													   .registerModule(eventHandlingConfiguration) // (3)
-													   .registerQueryHandler(c -> projection) // (4)
-													   .buildConfiguration(); // (5)
 		configuration.start();
 
+
+	}
+
+	public void sendCommands(Configuration configuration) throws InterruptedException, ExecutionException {
 		CommandGateway commandGateway = configuration.commandGateway();
 		QueryGateway queryGateway = configuration.queryGateway();
 		commandGateway.sendAndWait(new IssueCommand("gc1", 100));
@@ -55,18 +51,36 @@ public class App {
 					.forEach(System.out::println);
 	}
 
+	public Configuration buildConfiguration(AxonMetricsRegistry axonMetricsRegistry) {
+		CardSummaryProjection projection = new CardSummaryProjection();
+		EventHandlingConfiguration eventHandlingConfiguration = new EventHandlingConfiguration();
+		eventHandlingConfiguration.registerEventHandler(c -> projection);
+
+		Configurer configurer = DefaultConfigurer.defaultConfiguration()
+												 .configureAggregate(GiftCard.class) // (1)
+												 .configureEventStore(c -> new EmbeddedEventStore(new InMemoryEventStorageEngine())) //(2)
+												 .registerModule(eventHandlingConfiguration) // (3)
+												 .registerQueryHandler(c -> projection); // (4)
+//													   .buildConfiguration(); // (5)
+		return configurer.buildConfiguration();
+	}
+
 	public static void main(String[] args) throws ExecutionException, InterruptedException {
 		App app = new App();
 
 		//MetricsRegistry
 		AxonMetricsRegistry metricsRegistry = new AxonMetricsRegistry();
 		metricsRegistry.startReport();
-		Meter commandsMeter = metricsRegistry.meter("commands");
+		Meter pingMeter = metricsRegistry.meter("ping");
+		pingMeter.mark();
+		Configuration configuration = app.buildConfiguration(metricsRegistry);
 
-		commandsMeter.mark();
 
-		//Run commands
-		app.runServer();
+		//Run server
+		app.runServer(configuration);
+
+		//Send commands
+		app.sendCommands(configuration);
 
 		//Keep server running
 		metricsRegistry.wait5Seconds();
